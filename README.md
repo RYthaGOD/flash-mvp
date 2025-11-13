@@ -69,6 +69,31 @@ This repo implements step **3–4** + a mocked `/api/bridge` entrypoint.
 
 ---
 
+## 🎯 Hackathon Demo
+
+**All core workflows are ready to demo!** See [`HACKATHON_DEMO.md`](./HACKATHON_DEMO.md) for:
+- Complete demo script (10 minutes)
+- 5 demo workflows with step-by-step instructions
+- Troubleshooting guide
+- Presentation flow
+
+**Quick Demo Test:**
+```bash
+# Test all workflows automatically
+./scripts/demo-test.sh
+
+# Expected: All tests pass ✓
+```
+
+**Key Demo Workflows:**
+1. **Basic Bridge** (2 min) - Simple zenZEC minting
+2. **Zcash Verification** (3 min) - Real ZEC transaction verification
+3. **Full Privacy** (4 min) - Arcium MPC encrypted transactions
+4. **Burn & Swap** (3 min) - Complete bridge lifecycle
+5. **API Integration** (2 min) - Developer experience
+
+---
+
 ## Quickstart (Localnet)
 
 ### Prerequisites
