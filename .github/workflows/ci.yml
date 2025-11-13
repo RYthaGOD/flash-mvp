@@ -44,7 +44,7 @@ jobs:
           
       - name: Install Anchor CLI
         run: |
-          cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli --locked
           
       - name: Build Solana Program
         run: |
