@@ -1,0 +1,16 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.wallet-adapter-button {
+  background-color: #512da8 !important;
+}
+
+.wallet-adapter-button:hover {
+  background-color: #6a1b9a !important;
+}

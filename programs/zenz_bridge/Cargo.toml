@@ -1,0 +1,22 @@
+[package]
+name = "zenz_bridge"
+version = "0.1.0"
+description = "Zenz Bridge - Flash MVP Solana Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zenz_bridge"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+arcium = ["arcium-anchor"]
+default = []
+
+[dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+arcium-anchor = { version = "0.1.0", optional = true }
