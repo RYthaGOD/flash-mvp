@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const solanaService = require('../services/solana');
+const zcashService = require('../services/zcash');
 
 // Get bridge information and status
 router.get('/info', async (req, res) => {
@@ -26,7 +27,7 @@ router.get('/info', async (req, res) => {
 // Called after user pays BTC and ZEC is shielded
 router.post('/', async (req, res) => {
   try {
-    const { solanaAddress, amount, swapToSol } = req.body;
+    const { solanaAddress, amount, swapToSol, zcashTxHash } = req.body;
 
     if (!solanaAddress || !amount) {
       return res.status(400).json({
@@ -44,13 +45,33 @@ router.post('/', async (req, res) => {
 
     console.log(`Bridge request: ${amount} zenZEC to ${solanaAddress}, swapToSol: ${swapToSol}`);
 
-    // In a real implementation:
-    // 1. Verify BTC payment received (Cash App / Lightning)
-    // 2. Verify ZEC shielding completed
-    // 3. Call Solana program to mint zenZEC
+    // INTEGRATED FLOW:
+    // 1. Verify BTC payment received (Cash App / Lightning) - MOCKED
+    // 2. If zcashTxHash provided, verify ZEC shielding
+    let zcashVerification = null;
+    if (zcashTxHash) {
+      try {
+        console.log(`Verifying Zcash transaction: ${zcashTxHash}`);
+        zcashVerification = await zcashService.verifyShieldedTransaction(zcashTxHash);
+        if (!zcashVerification.verified) {
+          return res.status(400).json({
+            error: 'Zcash transaction verification failed',
+            zcashTxHash,
+          });
+        }
+      } catch (error) {
+        console.error('Zcash verification error:', error);
+        // Continue with mock for MVP
+      }
+    }
 
-    // For MVP, we mock the transaction
-    const txId = `mock_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // 3. Generate bridge transaction ID
+    const txId = zcashTxHash 
+      ? zcashService.generateBridgeTxId(zcashTxHash)
+      : `mock_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 4. Call Solana program to mint zenZEC
+    // In production: await solanaService.mintZenZEC(solanaAddress, amountNum);
     
     // Simulate async processing
     setTimeout(() => {
@@ -65,6 +86,11 @@ router.post('/', async (req, res) => {
       swapToSol: swapToSol || false,
       status: 'pending',
       message: 'zenZEC minting initiated',
+      zcashVerification: zcashVerification ? {
+        verified: true,
+        txHash: zcashTxHash,
+        blockHeight: zcashVerification.blockHeight,
+      } : null,
     });
   } catch (error) {
     console.error('Error processing bridge request:', error);

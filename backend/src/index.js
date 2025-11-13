@@ -4,8 +4,10 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const bridgeRoutes = require('./routes/bridge');
+const zcashRoutes = require('./routes/zcash');
 const solanaService = require('./services/solana');
 const relayerService = require('./services/relayer');
+const zcashService = require('./services/zcash');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,8 +26,10 @@ app.get('/', (req, res) => {
     status: 'running',
     endpoints: {
       bridge: '/api/bridge',
+      zcash: '/api/zcash',
       health: '/health',
-      info: '/api/bridge/info',
+      bridgeInfo: '/api/bridge/info',
+      zcashInfo: '/api/zcash/info',
     },
   });
 });
@@ -39,6 +43,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/bridge', bridgeRoutes);
+app.use('/api/zcash', zcashRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -58,6 +63,8 @@ app.listen(PORT, async () => {
   console.log(`Solana Network: ${process.env.SOLANA_NETWORK || 'devnet'}`);
   console.log(`Program ID: ${process.env.PROGRAM_ID || 'Not configured'}`);
   console.log(`zenZEC Mint: ${process.env.ZENZEC_MINT || 'Not configured'}`);
+  console.log(`Zcash Network: ${process.env.ZCASH_NETWORK || 'mainnet'}`);
+  console.log(`Zcash Bridge: ${process.env.ZCASH_BRIDGE_ADDRESS ? 'Configured' : 'Not configured'}`);
   console.log('='.repeat(60));
 
   // Start relayer listener if enabled

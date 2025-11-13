@@ -12,6 +12,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.34",
     "@solana/wallet-adapter-wallets": "^0.19.24",
     "@solana/web3.js": "^1.87.0",
+    "@chainsafe/webzjs-wallet": "^0.1.0",
     "axios": "^1.6.0"
   },
   "scripts": {
