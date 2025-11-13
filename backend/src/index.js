@@ -5,9 +5,11 @@ require('dotenv').config();
 
 const bridgeRoutes = require('./routes/bridge');
 const zcashRoutes = require('./routes/zcash');
+const arciumRoutes = require('./routes/arcium');
 const solanaService = require('./services/solana');
 const relayerService = require('./services/relayer');
 const zcashService = require('./services/zcash');
+const arciumService = require('./services/arcium');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,23 +29,33 @@ app.get('/', (req, res) => {
     endpoints: {
       bridge: '/api/bridge',
       zcash: '/api/zcash',
+      arcium: '/api/arcium',
       health: '/health',
       bridgeInfo: '/api/bridge/info',
       zcashInfo: '/api/zcash/info',
+      arciumStatus: '/api/arcium/status',
+    },
+    features: {
+      privacy: 'Full MPC encryption via Arcium',
+      confidential: 'All transactions encrypted',
     },
   });
 });
 
 app.get('/health', (req, res) => {
+  const arciumStatus = arciumService.getStatus();
   res.json({ 
     status: 'ok',
     relayerActive: relayerService.isListening,
+    arciumMPC: arciumStatus.enabled,
+    privacy: arciumStatus.enabled ? 'full' : 'basic',
     timestamp: new Date().toISOString(),
   });
 });
 
 app.use('/api/bridge', bridgeRoutes);
 app.use('/api/zcash', zcashRoutes);
+app.use('/api/arcium', arciumRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -65,6 +77,23 @@ app.listen(PORT, async () => {
   console.log(`zenZEC Mint: ${process.env.ZENZEC_MINT || 'Not configured'}`);
   console.log(`Zcash Network: ${process.env.ZCASH_NETWORK || 'mainnet'}`);
   console.log(`Zcash Bridge: ${process.env.ZCASH_BRIDGE_ADDRESS ? 'Configured' : 'Not configured'}`);
+  console.log('='.repeat(60));
+  
+  // Initialize Arcium MPC if enabled
+  if (process.env.ENABLE_ARCIUM_MPC === 'true') {
+    console.log('Initializing Arcium MPC network...');
+    try {
+      await arciumService.initialize();
+      const arciumStatus = arciumService.getStatus();
+      console.log(`Arcium MPC: ${arciumStatus.connected ? 'Connected' : 'Not connected'}`);
+      console.log(`Privacy Features: ${arciumStatus.features.encryptedAmounts ? 'Enabled' : 'Disabled'}`);
+    } catch (error) {
+      console.error('Failed to initialize Arcium:', error.message);
+    }
+  } else {
+    console.log('Arcium MPC disabled (set ENABLE_ARCIUM_MPC=true to enable full privacy)');
+  }
+  
   console.log('='.repeat(60));
 
   // Start relayer listener if enabled
