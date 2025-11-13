@@ -1,5 +1,5 @@
 const { Connection, PublicKey, Keypair, clusterApiUrl } = require('@solana/web3.js');
-const { AnchorProvider, Program, web3 } = require('@project-serum/anchor');
+const { AnchorProvider, Program, web3 } = require('@coral-xyz/anchor');
 const fs = require('fs');
 const path = require('path');
 
