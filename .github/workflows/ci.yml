@@ -46,6 +46,11 @@ jobs:
           sh -c "$(curl -sSfL https://release.solana.com/v1.18.0/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       
+      - name: Setup Solana Keypair
+        run: |
+          mkdir -p $HOME/.config/solana
+          solana-keygen new --no-bip39-passphrase --silent --outfile $HOME/.config/solana/id.json
+      
       - name: Cache Anchor CLI
         id: cache-anchor
         uses: actions/cache@v3
@@ -57,14 +62,20 @@ jobs:
         if: steps.cache-anchor.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli --locked
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       
       - name: Verify Anchor installation
         run: |
+          echo "Anchor CLI path: $(which anchor || echo 'not found in PATH')"
           anchor --version
+          echo "Solana CLI version: $(solana --version)"
+          echo "Rust version: $(rustc --version)"
           
       - name: Build Solana Program with Anchor
         run: |
           anchor build
+        env:
+          ANCHOR_WALLET: $HOME/.config/solana/id.json
           
       - name: Build Solana Program with Cargo (with Arcium)
         run: |
