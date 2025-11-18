@@ -13,14 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Install libudev-dev
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+          components: rustfmt, clippy
           
       - name: Cache Cargo registry
         uses: actions/cache@v3
@@ -42,16 +43,36 @@ jobs:
       
       - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.solana.com/v1.17.0/install)"
+          sh -c "$(curl -sSfL https://release.solana.com/v1.18.0/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      
+      - name: Cache Anchor CLI
+        id: cache-anchor
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/anchor
+          key: ${{ runner.os }}-anchor-0.32.1
           
       - name: Install Anchor CLI
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli --locked
+      
+      - name: Verify Anchor installation
+        run: |
+          anchor --version
           
-      - name: Build Solana Program
+      - name: Build Solana Program with Anchor
         run: |
           anchor build
+          
+      - name: Build Solana Program with Cargo (with Arcium)
+        run: |
+          cargo build --manifest-path programs/zenz_bridge/Cargo.toml --features arcium --release
+          
+      - name: Build Solana Program with Cargo (without Arcium)
+        run: |
+          cargo build --manifest-path programs/zenz_bridge/Cargo.toml --release
           
       - name: Run Solana Tests
         run: |

@@ -166,10 +166,10 @@ This repo implements step **3–4** + a mocked `/api/bridge` entrypoint.
 
 ### Prerequisites
 
-- [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools)
-- [Anchor CLI](https://www.anchor-lang.com/docs/installation) (v0.29.0)
+- [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools) (v1.18.0+)
+- [Anchor CLI](https://www.anchor-lang.com/docs/installation) (v0.32.1) - Optional but recommended
 - [Node.js](https://nodejs.org/) (v18+)
-- [Rust](https://rustup.rs/)
+- [Rust](https://rustup.rs/) (v1.70.0+)
 
 ### 1. Start a Local Validator
 
@@ -181,6 +181,7 @@ Keep this running in a separate terminal.
 
 ### 2. Build and Deploy the Solana Program
 
+**Option A: Using Anchor CLI (Recommended)**
 ```bash
 # Build the program
 anchor build
@@ -190,6 +191,20 @@ anchor deploy
 
 # Note the program ID and update Anchor.toml if needed
 ```
+
+**Option B: Using Cargo (Faster for development)**
+```bash
+# Build with default features
+./scripts/build-solana.sh default
+
+# Build with Arcium privacy features
+./scripts/build-solana.sh arcium
+
+# Build release version
+./scripts/build-solana.sh release
+```
+
+**Note:** The program builds successfully with some warnings about `anchor-debug` feature. These are harmless and don't affect functionality.
 
 ### 3. Initialize the Bridge Config
 
