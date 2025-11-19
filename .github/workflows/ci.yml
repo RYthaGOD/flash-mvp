@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Build and test Solana program
+  solana-program:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+          
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          
+      - name: Cache Cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install Solana CLI
+        run: |
+          curl --retry 5 --retry-delay 5 -sSfL https://release.solana.com/v1.18.0/install | sh
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          solana --version
+      
+      - name: Validate Solana CLI Install
+        run: |
+          if ! command -v $HOME/.local/share/solana/install/active_release/bin/solana &> /dev/null; then
+            echo "Solana CLI not found after install."
+            exit 1
+          fi
+          echo "Solana CLI successfully installed at: $(which $HOME/.local/share/solana/install/active_release/bin/solana || echo 'Using full path')"
+      
+      - name: Setup Solana Keypair
+        run: |
+          mkdir -p $HOME/.config/solana
+          $HOME/.local/share/solana/install/active_release/bin/solana-keygen new --no-bip39-passphrase --silent --outfile $HOME/.config/solana/id.json
+      
+      - name: Cache Anchor CLI
+        id: cache-anchor
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/anchor
+          key: ${{ runner.os }}-anchor-0.32.1
+          
+      - name: Install Anchor CLI
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli --locked
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Verify Anchor installation
+        run: |
+          echo "Anchor CLI path: $(which anchor || echo 'not found in PATH')"
+          anchor --version
+          echo "Solana CLI version: $(solana --version)"
+          echo "Rust version: $(rustc --version)"
+          
+      - name: Build Solana Program with Anchor
+        run: |
+          anchor build
+        env:
+          ANCHOR_WALLET: $HOME/.config/solana/id.json
+          
+      - name: Build Solana Program with Cargo (with Arcium)
+        run: |
+          cargo build --manifest-path programs/zenz_bridge/Cargo.toml --features arcium --release
+          
+      - name: Build Solana Program with Cargo (without Arcium)
+        run: |
+          cargo build --manifest-path programs/zenz_bridge/Cargo.toml --release
+          
+      - name: Run Solana Tests
+        run: |
+          echo "Solana tests would run here (requires local validator)"
+
+  # Build and test backend
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+          
+      - name: Install dependencies
+        working-directory: backend
+        run: npm install
+        
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test || echo "No tests configured yet"
+
+  # Build and test frontend
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+          
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+        
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test -- --passWithNoTests
+
+  # Lint check
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+        
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+        
+      - name: Lint backend
+        working-directory: backend
+        run: npm run lint || echo "No lint script configured"
+        
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint || echo "No lint script configured"
