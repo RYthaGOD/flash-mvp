@@ -45,11 +45,13 @@ jobs:
         run: |
           sh -c "$(curl -sSfL https://release.solana.com/v1.18.0/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          solana --version
       
       - name: Setup Solana Keypair
         run: |
           mkdir -p $HOME/.config/solana
-          solana-keygen new --no-bip39-passphrase --silent --outfile $HOME/.config/solana/id.json
+          $HOME/.local/share/solana/install/active_release/bin/solana-keygen new --no-bip39-passphrase --silent --outfile $HOME/.config/solana/id.json
       
       - name: Cache Anchor CLI
         id: cache-anchor
